@@ -44,6 +44,16 @@ module RSpec::Core::Parallel
       expect(simplecov.command_name).to eq 'RSpec (worker 2)'
     end
 
+    it 'uses the setting of SimpleCov 1.x, which deprecates `enable_for_subprocesses`' do
+      simplecov.define_singleton_method(:merge_subprocesses) { |value| self.enabled_for_subprocesses = value }
+      allow(simplecov).to receive(:enable_for_subprocesses).and_call_original
+
+      SimpleCovIntegration.before_fork
+
+      expect(simplecov.enabled_for_subprocesses?).to be(true)
+      expect(simplecov).not_to have_received(:enable_for_subprocesses)
+    end
+
     it 'keeps the configuration of suites already measuring the coverage of subprocesses' do
       simplecov.enable_for_subprocesses true
       SimpleCovIntegration.before_fork

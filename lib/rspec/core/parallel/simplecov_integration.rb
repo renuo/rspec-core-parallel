@@ -32,7 +32,12 @@ module RSpec
           return if ::SimpleCov.enabled_for_subprocesses?
 
           @command_name = ::SimpleCov.command_name
-          ::SimpleCov.enable_for_subprocesses true
+          # SimpleCov 1.x renamed `enable_for_subprocesses`, deprecating it.
+          if ::SimpleCov.respond_to?(:merge_subprocesses)
+            ::SimpleCov.merge_subprocesses true
+          else
+            ::SimpleCov.enable_for_subprocesses true
+          end
           require 'simplecov/process'
         end
 

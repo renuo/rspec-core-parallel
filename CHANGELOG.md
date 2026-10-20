@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+* No deprecation warning with SimpleCov 1.x, which renamed
+  `enable_for_subprocesses` to `merge_subprocesses`.
+
 ## 0.2.0
 
 * SimpleCov collects the coverage of the workers without any configuration.

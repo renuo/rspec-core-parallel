@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+# `rspec`, with this gem loaded before the options are read, so that
+# `--parallel COUNT` and `--no-parallel` can be passed on the command line.
+require 'rspec/core'
+require 'rspec/core/parallel'
+
+RSpec::Core::Runner.invoke

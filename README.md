@@ -15,8 +15,9 @@ group :test do
 end
 ```
 
-Rails apps load the gem with the rest of the `test` group. In other projects, require it at the top of
-`spec_helper.rb`:
+And require it at the top of `spec_helper.rb`. Rails apps also load it with the rest of the `test` group, but only
+when the app boots, which is usually after `spec_helper.rb` is loaded: until then, settings like `parallel_workers`
+and `parallel_worker_setup` don't exist.
 
 ```ruby
 require "rspec/core/parallel"
@@ -63,7 +64,9 @@ files, Redis, and so on.
 
 **Databases.** In Rails apps every worker gets its own test database (`app_test_0`, `app_test_1`, ...), created and
 loaded from the schema when needed, like `rails test` does in parallel. Set
-`ActiveSupport.parallelize_test_databases = false` to opt out.
+`ActiveSupport.parallelize_test_databases = false` to opt out. The main process still uses the test database itself
+(`maintain_test_schema!` runs before the workers are forked), so on CI create it as usual, e.g. with
+`bin/rails db:create db:schema:load`, rather than with `parallel:create`.
 
 **Other resources.** Each worker gets a `TEST_ENV_NUMBER` environment variable (`""`, `"2"`, `"3"`, ...) as with
 parallel_tests, and runs the `parallel_worker_setup` hooks. Workers are forked after the suite is loaded, so anything
@@ -84,19 +87,9 @@ end
 
 ## Code coverage
 
-SimpleCov needs to collect coverage from the forked workers:
-
-```ruby
-SimpleCov.enable_for_subprocesses true
-SimpleCov.start
-
-RSpec.configure do |config|
-  # Without a stable name, SimpleCov names each worker after its pid, and the results of old runs pile up.
-  config.parallel_worker_setup do |worker_number|
-    SimpleCov.command_name "RSpec (worker #{worker_number})"
-  end
-end
-```
+SimpleCov collects the coverage of the workers without any configuration: the gem turns on SimpleCov's support for
+subprocesses and names the results of each worker after its number, so that they replace those of the previous run. If
+you already call `SimpleCov.enable_for_subprocesses true`, your `at_fork` configuration is kept.
 
 Workers only save their results. The main process exits last: it merges them, writes the report and checks the
 minimum coverage.

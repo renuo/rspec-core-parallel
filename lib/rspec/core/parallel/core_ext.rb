@@ -195,6 +195,21 @@ module RSpec
           end
         end
 
+        # @private
+        module ProfileNotification
+          # Examples running in parallel take longer in total than the run:
+          # the slowest ones are then a share of the time taken by all the
+          # examples, rather than of the run time.
+          def percentage
+            @percentage ||=
+              begin
+                examples_time = examples.inject(0.0) { |total, example| total + example.execution_result.run_time.to_f }
+                time_taken = slow_duration / [duration, examples_time].max
+                '%.1f' % ((time_taken.nan? ? 0.0 : time_taken) * 100)
+              end
+          end
+        end
+
         # Order dependencies can only be reproduced in a single process.
         #
         # @private
@@ -247,6 +262,7 @@ module RSpec
     Example.__send__(:include, Parallel::CoreExt::Example)
     ExampleGroup.singleton_class.__send__(:prepend, Parallel::CoreExt::ExampleGroupClassMethods)
     Reporter.__send__(:include, Parallel::CoreExt::Reporter)
+    Notifications::ProfileNotification.__send__(:prepend, Parallel::CoreExt::ProfileNotification)
     Bisect::ShellCommand.__send__(:prepend, Parallel::CoreExt::BisectShellCommand)
     Bisect::ForkRunner::RunDispatcher.__send__(:prepend, Parallel::CoreExt::BisectRunDispatcher)
   end

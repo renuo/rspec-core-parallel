@@ -68,6 +68,7 @@ module RSpec
         def start_workers
           flush_output_streams
           RailsIntegration.before_fork
+          SimpleCovIntegration.before_fork
           Process.warmup if Process.respond_to?(:warmup)
 
           @workers = []

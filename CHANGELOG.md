@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0
+
+* SimpleCov collects the coverage of the workers without any configuration.
+* `--profile` shows the slowest examples as a share of the time taken by all
+  the examples, rather than of the run time, which could exceed 100%.
+* README: require the gem in `spec_helper.rb` in Rails apps too, to configure it
+  there, and create the test database on CI as usual.
+
 ## 0.1.0
 
 * Loading the gem makes `rspec` run the suite in forked worker processes, one

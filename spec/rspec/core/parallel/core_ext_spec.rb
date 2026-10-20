@@ -82,6 +82,25 @@ module RSpec::Core
       end
     end
 
+    describe 'profile' do
+      def profile(duration, run_times)
+        examples = run_times.map { |run_time| double(:execution_result => double(:run_time => run_time)) }
+        Notifications::ProfileNotification.new(duration, examples, 1, {})
+      end
+
+      it 'is a share of the run time when examples ran one after the other' do
+        expect(profile(10.0, [3.0, 1.0]).percentage).to eq '30.0'
+      end
+
+      it 'is a share of the time taken by all the examples when they ran in parallel' do
+        expect(profile(2.0, [3.0, 1.0, 1.0]).percentage).to eq '60.0'
+      end
+
+      it 'is 0 when nothing took any time' do
+        expect(profile(0.0, [0.0]).percentage).to eq '0.0'
+      end
+    end
+
     describe 'bisect' do
       let(:server) { double(:drb_port => 1234) }
 

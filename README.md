@@ -83,7 +83,18 @@ RSpec.configure do |config|
 end
 ```
 
-**Hooks.** `before(:suite)`, `after(:suite)` and `at_exit` hooks run in every worker.
+**Hooks.** `before(:suite)`, `after(:suite)` and `at_exit` hooks run in every worker. For what all the workers share,
+like starting a service or cleaning it up, use `before(:run)` and `after(:run)`: they run once, in the main process,
+before the workers are forked and after they have exited. In sequential runs they run around the `:suite` hooks.
+
+```ruby
+RSpec.configure do |config|
+  config.before(:run) { TestServer.start }
+  config.after(:run) { TestServer.stop }
+end
+```
+
+When a `before(:run)` hook fails, no example runs, but the `after(:run)` hooks still do.
 
 ## Code coverage
 

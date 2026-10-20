@@ -51,6 +51,7 @@ module RSpec
       def self.run(configuration, world, units, reporter)
         worker_count = [configuration.parallel_workers.to_i, units.size].min
         passed = Coordinator.new(configuration, world, worker_count).run(units, reporter)
+        SimpleCovIntegration.after_workers
         persist_run_times(configuration, world)
         passed
       end

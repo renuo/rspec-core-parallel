@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+* `before(:run)` and `after(:run)` hooks, which run once per run: in the main
+  process around the workers in parallel runs, around the `:suite` hooks in
+  sequential runs.
+* SimpleCov merges the coverage of workers that finished more than its
+  `merge_timeout` (10 minutes by default) before the slowest one.
+
 ## 0.2.1
 
 * No deprecation warning with SimpleCov 1.x, which renamed

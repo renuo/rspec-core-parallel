@@ -266,6 +266,64 @@ RSpec.describe 'Running specs in parallel worker processes', :unless => RSpec::S
     )
   end
 
+  describe '`:run` hooks' do
+    def write_run_hooks(before_run='')
+      write_file "spec/config_spec.rb", "
+        log = ->(event) { File.open('#{expand_path('events')}', 'a') { |f| f.puts \"\#{event}:\#{Process.pid}\" } }
+        RSpec.configure do |c|
+          c.before(:run) { #{before_run}; log.call('before_run') }
+          c.before(:suite) { log.call('before_suite') }
+          c.after(:suite) { log.call('after_suite') }
+          c.after(:run) { log.call('after_run') }
+          c.append_after(:run) { log.call('last_after_run') }
+          c.prepend_before(:run) { log.call('first_before_run') }
+        end
+      "
+    end
+
+    def events
+      File.read(expand_path('events')).split("\n").map { |line| line.split(':') }
+    end
+
+    it 'run once in the main process, around the workers' do
+      write_run_hooks
+      write_groups(4)
+
+      run_command "--parallel 2 spec"
+
+      expect(last_cmd_exit_status).to eq(0)
+      main_process_events = events.select { |_, pid| pid == Process.pid.to_s }.map(&:first)
+      expect(main_process_events).to eq %w[first_before_run before_run after_run last_after_run]
+      expect(events.first(2).map(&:first)).to eq %w[first_before_run before_run]
+      expect(events.last(2).map(&:first)).to eq %w[after_run last_after_run]
+      expect(events.map(&:first).count('before_suite')).to eq 2
+    end
+
+    it 'run once around the suite hooks in sequential runs' do
+      write_run_hooks
+      write_groups(2)
+
+      run_command "--no-parallel spec"
+
+      expect(last_cmd_exit_status).to eq(0)
+      expect(events.map(&:first)).to eq %w[first_before_run before_run before_suite after_suite after_run last_after_run]
+    end
+
+    it 'run no example when a `before(:run)` hook fails, but still run the `after(:run)` hooks' do
+      write_run_hooks("raise 'boom'")
+      write_groups(2)
+
+      run_command "--parallel 2 spec"
+
+      expect(last_cmd_exit_status).to eq(1)
+      expect(normalize_durations(last_cmd_stdout)).to include(
+        "An error occurred in a `before(:run)` hook.",
+        "0 examples, 0 failures, 1 error occurred outside of examples"
+      )
+      expect(events.map(&:first)).to eq %w[first_before_run after_run last_after_run]
+    end
+  end
+
   it 'makes metadata set while running an example available to formatters' do
     write_file "metadata_formatter.rb", "
       class ParallelMetadataFormatter

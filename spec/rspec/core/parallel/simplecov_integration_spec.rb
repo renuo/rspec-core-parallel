@@ -72,6 +72,19 @@ module RSpec::Core::Parallel
       expect(simplecov.enabled_for_subprocesses?).to be_falsey
     end
 
+    it 'merges the results of workers that finished long before the others' do
+      simplecov.define_singleton_method(:merge_timeout) do |seconds=nil|
+        @merge_timeout = seconds if seconds
+        @merge_timeout || 600
+      end
+      allow(::Process).to receive(:clock_gettime).and_return(100.0, 1300.2)
+
+      SimpleCovIntegration.before_fork
+      SimpleCovIntegration.after_workers
+
+      expect(simplecov.merge_timeout).to eq 1801
+    end
+
     it 'keeps SimpleCov from taking a worker for the process writing the report' do
       SimpleCovIntegration.after_fork(1)
 

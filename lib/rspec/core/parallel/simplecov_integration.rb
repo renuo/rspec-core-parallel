@@ -16,6 +16,8 @@ module RSpec
       #   `TEST_ENV_NUMBER`), so workers finishing early checked the coverage
       #   collected so far and printed false "below minimum coverage"
       #   warnings. The main process exits after all the workers.
+      # * extends SimpleCov's `merge_timeout` by the time the workers ran, so
+      #   that the main process merges the results of all of them.
       #
       # @private
       module SimpleCovIntegration
@@ -28,7 +30,10 @@ module RSpec
 
         def self.before_fork
           @command_name = nil
+          @forked_at = nil
           return unless defined?(::SimpleCov) && defined?(::Coverage.running?) && ::Coverage.running?
+
+          @forked_at = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
           return if ::SimpleCov.enabled_for_subprocesses?
 
           @command_name = ::SimpleCov.command_name
@@ -46,6 +51,15 @@ module RSpec
 
           ::SimpleCov.command_name "#{@command_name} (worker #{worker_number})" if @command_name
           ::SimpleCov.singleton_class.__send__(:prepend, NotFinalResultProcess)
+        end
+
+        # SimpleCov merges only results younger than `merge_timeout`: those of
+        # workers finished long before the slowest one would be left out.
+        def self.after_workers
+          return unless @forked_at && ::SimpleCov.respond_to?(:merge_timeout)
+
+          workers_time = (::Process.clock_gettime(::Process::CLOCK_MONOTONIC) - @forked_at).ceil
+          ::SimpleCov.merge_timeout(::SimpleCov.merge_timeout + workers_time)
         end
       end
     end

@@ -107,7 +107,73 @@ module RSpec
             Parallel.supported? ? Parallel.default_worker_count : 1
           end
 
+          # `before(:run)` and `after(:run)` hooks run once per run: around the
+          # `:suite` hooks in sequential runs, and in the main process around
+          # the workers in parallel runs, where `:suite` hooks run in every
+          # worker. Use them for what all the workers share, like starting a
+          # service or cleaning it up.
+          def before(scope=nil, *meta, &block)
+            return super unless scope == :run
+
+            run_hooks(:before) << Hooks::BeforeHook.new(block, {})
+          end
+          alias_method :append_before, :before
+
+          def prepend_before(scope=nil, *meta, &block)
+            return super unless scope == :run
+
+            run_hooks(:before).unshift Hooks::BeforeHook.new(block, {})
+          end
+
+          def after(scope=nil, *meta, &block)
+            return super unless scope == :run
+
+            run_hooks(:after).unshift Hooks::AfterHook.new(block, {})
+          end
+          alias_method :prepend_after, :after
+
+          def append_after(scope=nil, *meta, &block)
+            return super unless scope == :run
+
+            run_hooks(:after) << Hooks::AfterHook.new(block, {})
+          end
+
+          def with_suite_hooks
+            return super if parallel_worker_number
+
+            with_run_hooks { super }
+          end
+
+          # @private
+          #
+          # Examples are not run when a `before(:run)` hook fails, but all the
+          # `after(:run)` hooks are, so that everything started is stopped.
+          def with_run_hooks
+            return yield if dry_run?
+
+            begin
+              run_run_hooks('a `before(:run)` hook', run_hooks(:before), :stop_on_failure) ? yield : false
+            ensure
+              run_run_hooks('an `after(:run)` hook', run_hooks(:after))
+            end
+          end
+
         private
+
+          def run_hooks(position)
+            (@run_hooks ||= { :before => [], :after => [] })[position]
+          end
+
+          def run_run_hooks(description, hooks, stop_on_failure=false)
+            context = SuiteHookContext.new(description, reporter)
+            hooks.each do |hook|
+              hook.run(context)
+            rescue Support::AllExceptionsExceptOnesWeMustNotRescue => e
+              context.set_exception(e)
+              return false if stop_on_failure
+            end
+            true
+          end
 
           # rspec-core runs the default path (`spec`) when no files are given
           # only when its command is `rspec`.
@@ -148,7 +214,7 @@ module RSpec
 
             examples_count = @world.example_count(example_groups)
             examples_passed = @configuration.reporter.report(examples_count) do |reporter|
-              Parallel.run(@configuration, @world, parallel_units, reporter)
+              @configuration.with_run_hooks { Parallel.run(@configuration, @world, parallel_units, reporter) }
             end
 
             exit_code(examples_passed)

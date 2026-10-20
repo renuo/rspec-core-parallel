@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
 * In Rails apps every worker writes to its own log file (`log/test-1.log`,
   `log/test-2.log`...) instead of `log/test.log`.

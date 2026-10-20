@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+* In Rails apps every worker writes to its own log file (`log/test-1.log`,
+  `log/test-2.log`...) instead of `log/test.log`.
+
 ## 0.3.0
 
 * `before(:run)` and `after(:run)` hooks, which run once per run: in the main

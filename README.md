@@ -68,6 +68,9 @@ loaded from the schema when needed, like `rails test` does in parallel. Set
 (`maintain_test_schema!` runs before the workers are forked), so on CI create it as usual, e.g. with
 `bin/rails db:create db:schema:load`, rather than with `parallel:create`.
 
+**Logs.** In Rails apps every worker writes to its own log file (`log/test-1.log`, `log/test-2.log`, ...), so that the
+lines of the workers don't mix in `log/test.log`, which keeps the lines of the main process.
+
 **Other resources.** Each worker gets a `TEST_ENV_NUMBER` environment variable (`""`, `"2"`, `"3"`, ...) as with
 parallel_tests, and runs the `parallel_worker_setup` hooks. Workers are forked after the suite is loaded, so anything
 set up while loading, like a constant with a directory or a Redis client, is the same in all of them. This also applies

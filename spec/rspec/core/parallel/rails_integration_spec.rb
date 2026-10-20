@@ -1,3 +1,5 @@
+require 'logger'
+
 module RSpec::Core::Parallel
   RSpec.describe RailsIntegration do
     let(:calls) { [] }
@@ -43,6 +45,39 @@ module RSpec::Core::Parallel
       RailsIntegration.before_fork
       RailsIntegration.after_fork(1)
       expect(calls).to be_empty
+    end
+    describe 'log files', :isolated_directory do
+      def rails_log
+        file = File.open('test.log', 'a')
+        file.sync = true
+        Logger.new(file)
+      end
+      it 'gives every worker its own log file next to the one of the app' do
+        logger = rails_log
+        stub_const("Rails", double(:logger => logger))
+        logger.info('before forking')
+        RailsIntegration.after_fork(2)
+        logger.info("in worker 2 ä")
+        expect(File.read('test.log')).to include('before forking')
+        expect(File.read('test.log')).not_to include('in worker 2')
+        expect(File.read('test-2.log')).to include("in worker 2 ä")
+      end
+      it 'reopens every logger of a broadcast' do
+        loggers = [rails_log, rails_log]
+        stub_const("Rails", double(:logger => double(:broadcasts => loggers)))
+        RailsIntegration.after_fork(3)
+        loggers.each_with_index { |logger, index| logger.info("logger #{index}") }
+        expect(File.read('test-3.log')).to include('logger 0', 'logger 1')
+        expect(File.read('test.log')).to be_empty
+      end
+      it 'leaves loggers that do not write to a file as they are' do
+        logger = Logger.new(StringIO.new)
+        stub_const("Rails", double(:logger => logger))
+        RailsIntegration.after_fork(1)
+        logger.info('in worker 1')
+        expect(logger.instance_variable_get(:@logdev).dev.string).to include('in worker 1')
+        expect(Dir.children('.')).to be_empty
+      end
     end
   end
 end

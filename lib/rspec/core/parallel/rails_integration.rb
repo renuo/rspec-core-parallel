@@ -11,6 +11,8 @@ module RSpec
       #   `ActiveSupport.parallelize_test_databases` to `false` to opt out.
       #   Workers are numbered from 0 for these hooks, as in Rails. Rails
       #   versions before 8.1 have no hooks to run before forking.
+      # * gives every worker its own log file (`log/test-1.log`, `log/test-2.log`...),
+      #   rather than mixing the lines of all the workers in `log/test.log`.
       # * loads the translations before forking, as Rails does when eager
       #   loading, rather than in every worker.
       #
@@ -22,7 +24,37 @@ module RSpec
         end
 
         def self.after_fork(worker_number)
+          split_log(worker_number)
           hooks(:after_fork_hooks).each { |hook| hook.call(worker_number - 1) }
+        end
+
+        # Rails opens the log file itself and hands the open file to its
+        # logger, so the path comes from the file the logger writes to.
+        # Loggers writing elsewhere, like to STDOUT, are left as they are.
+        def self.split_log(worker_number)
+          return unless defined?(::Rails.logger) && ::Rails.logger
+
+          loggers = ::Rails.logger.respond_to?(:broadcasts) ? ::Rails.logger.broadcasts : [::Rails.logger]
+          loggers.each do |logger|
+            device = logger.instance_variable_get(:@logdev)&.dev
+            next unless device.is_a?(::File)
+
+            logger.reopen(open_log_file(worker_log_path(device.path, worker_number)))
+          end
+        end
+
+        def self.worker_log_path(path, worker_number)
+          extension = ::File.extname(path)
+          "#{path.delete_suffix(extension)}-#{worker_number}#{extension}"
+        end
+
+        # As Rails opens its own log file: in binary mode, so that lines in
+        # any encoding can be written, and without buffering.
+        def self.open_log_file(path)
+          file = ::File.open(path, 'a')
+          file.binmode
+          file.sync = true
+          file
         end
 
         def self.run_cleanup(worker_number)

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+* Parallel runs start by printing the number of workers and whether they use
+  the run times of a previous run, and from which file, so that a run without
+  them (e.g. on CI without a cached run times file) is easy to spot.
+* README: which file to cache on CI when `example_status_persistence_file_path`
+  is set, cleanup hooks deleting shared directories, and background threads
+  like the reporter of Coverband.
+
 ## 0.4.0
 
 * In Rails apps every worker writes to its own log file (`log/test-1.log`,

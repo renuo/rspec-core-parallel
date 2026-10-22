@@ -99,6 +99,15 @@ end
 
 When a `before(:run)` hook fails, no example runs, but the `after(:run)` hooks still do.
 
+Hooks that clean up a shared directory after each example, like `after(:each) { FileUtils.rm_rf("public/uploads") }`,
+delete the files of the examples running in the other workers. Run them in `after(:run)`, or give each worker its own
+directory.
+
+**Background threads.** Some libraries start a background thread when the app boots and start it again in forked
+processes, like the reporter of Coverband. In the workers it runs alongside the examples and can make them fail
+randomly, e.g. with `can't add a new key into hash during iteration`. Don't start them in the test environment, e.g.
+with `COVERBAND_DISABLE_AUTO_START=true` for Coverband.
+
 ## Code coverage
 
 SimpleCov collects the coverage of the workers without any configuration: the gem turns on SimpleCov's support for
@@ -122,7 +131,18 @@ download folder, for example) with `parallel_split: false`, or give each worker 
 
 The run time of each example is saved to `tmp/rspec_parallel_run_times.txt`, or to
 `config.example_status_persistence_file_path` if you set one. The next run uses it to start the longest groups
-first. You can change the path with `config.parallel_run_times_file_path`. On CI, cache this file between builds.
+first. You can change the path with `config.parallel_run_times_file_path`. On CI, cache this file between builds: if
+`example_status_persistence_file_path` is set (e.g. to `spec/examples.txt`), that is the file to cache, and
+`tmp/rspec_parallel_run_times.txt` is not written at all.
+
+Every parallel run starts by telling where its run times come from:
+
+```
+Running in 4 parallel workers, using the run times of 694 examples from tmp/rspec_parallel_run_times.txt.
+Running in 4 parallel workers, without run times of a previous run (none found in tmp/rspec_parallel_run_times.txt).
+```
+
+If CI keeps printing the second line, check that the cached file is the one named there.
 
 ## Requirements
 

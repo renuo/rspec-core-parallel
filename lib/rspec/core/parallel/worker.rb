@@ -67,7 +67,7 @@ module RSpec
           @reaped = true
         end
 
-      private
+        private
 
         def run(configuration, registry, commands, events)
           # :nocov: - executed in forked processes, covered by integration specs
@@ -100,7 +100,7 @@ module RSpec
         # under parallel_tests and makes the last worker wait for a parallel_tests
         # pid file. The main process collects the results of all the workers.
         def prepare_environment(configuration)
-          ENV['TEST_ENV_NUMBER'] = @number == 1 ? '' : @number.to_s
+          ENV["TEST_ENV_NUMBER"] = (@number == 1) ? "" : @number.to_s
           configuration.parallel_worker_number = @number
           configuration.world.wants_to_quit = false
           trap_interrupt(configuration.world)
@@ -109,7 +109,7 @@ module RSpec
         # The main process tells the user it is shutting down: workers
         # quietly stop after their current example.
         def trap_interrupt(world)
-          trap('INT') { world.wants_to_quit ? exit!(1) : world.wants_to_quit = true }
+          trap("INT") { world.wants_to_quit ? exit!(1) : world.wants_to_quit = true }
         end
 
         def process_commands(registry, reporter, commands)
@@ -159,7 +159,7 @@ module RSpec
 
           begin
             RSpec.current_scope = :before_context_hook
-            split_group.run_before_context_hooks(split_group.new('before(:context) hook'))
+            split_group.run_before_context_hooks(split_group.new("before(:context) hook"))
             yield
           rescue Pending::SkipDeclaredInExample => e
             for_part_examples(group, examples_only, reporter) { |example| example.skip_with_exception(reporter, e) }
@@ -170,7 +170,7 @@ module RSpec
             false
           ensure
             RSpec.current_scope = :after_context_hook
-            split_group.run_after_context_hooks(split_group.new('after(:context) hook'))
+            split_group.run_after_context_hooks(split_group.new("after(:context) hook"))
           end
         end
 

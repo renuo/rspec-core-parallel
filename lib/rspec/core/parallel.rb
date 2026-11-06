@@ -1,5 +1,5 @@
-require 'rspec/core'
-require_relative 'parallel/version'
+require "rspec/core"
+require_relative "parallel/version"
 
 module RSpec
   module Core
@@ -26,7 +26,7 @@ module RSpec
 
         unless supported?
           RSpec.warning "Running specs in parallel requires `Process.fork`, which is not " \
-                        "supported here: running them sequentially", :call_site => nil
+                        "supported here: running them sequentially", call_site: nil
           return nil
         end
 
@@ -43,14 +43,14 @@ module RSpec
       # run, so that a cold run, e.g. on CI without a cached run times file,
       # is easy to spot.
       def self.announcement(scheduler, worker_count)
-        paths = scheduler.run_times_paths.join(', ')
+        paths = scheduler.run_times_paths.join(", ")
         run_times = if scheduler.run_times_count > 0
-                      "using the run times of #{scheduler.run_times_count} examples from #{paths}"
-                    elsif paths.empty?
-                      "without run times of a previous run"
-                    else
-                      "without run times of a previous run (none found in #{paths})"
-                    end
+          "using the run times of #{scheduler.run_times_count} examples from #{paths}"
+        elsif paths.empty?
+          "without run times of a previous run"
+        else
+          "without run times of a previous run (none found in #{paths})"
+        end
         "Running in #{worker_count} parallel workers, #{run_times}."
       end
 
@@ -85,28 +85,28 @@ module RSpec
       rescue SystemCallError => e
         RSpec.warning "Could not write example run times to #{path} (configured as " \
                       "`config.parallel_run_times_file_path`) due to a system error: " \
-                      "#{e.inspect}.", :call_site => nil
+                      "#{e.inspect}.", call_site: nil
       end
 
       def self.supported?
-        Process.respond_to?(:fork) && RUBY_ENGINE == 'ruby' && !RSpec::Support::OS.windows?
+        Process.respond_to?(:fork) && RUBY_ENGINE == "ruby" && !RSpec::Support::OS.windows?
       end
 
       # One worker per physical core: workers sharing a core through
       # simultaneous multithreading (hyper-threading) mostly slow each other
       # down, using more CPU time and memory for the same wall time.
       def self.default_worker_count
-        require 'etc'
+        require "etc"
         [Etc.nprocessors, physical_core_count].compact.min
       end
 
       def self.physical_core_count
-        siblings = Dir['/sys/devices/system/cpu/cpu[0-9]*/topology/thread_siblings_list']
+        siblings = Dir["/sys/devices/system/cpu/cpu[0-9]*/topology/thread_siblings_list"]
         return siblings.map { |path| File.read(path).strip }.uniq.size unless siblings.empty?
 
-        return nil unless RbConfig::CONFIG['host_os'] =~ /darwin/
+        return nil unless /darwin/.match?(RbConfig::CONFIG["host_os"])
 
-        count = IO.popen(%w[sysctl -n hw.physicalcpu], :err => File::NULL, &:read).to_i
+        count = IO.popen(%w[sysctl -n hw.physicalcpu], err: File::NULL, &:read).to_i
         count if count > 0
       rescue SystemCallError, IOError
         nil
@@ -115,4 +115,4 @@ module RSpec
   end
 end
 
-require_relative 'parallel/core_ext'
+require_relative "parallel/core_ext"

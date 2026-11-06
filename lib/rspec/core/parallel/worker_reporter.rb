@@ -42,7 +42,7 @@ module RSpec
 
         # Custom notifications are instances of anonymous classes, which
         # cannot be sent to the main process: their options are sent instead.
-        def publish(event, options={})
+        def publish(event, options = {})
           return super if RSPEC_NOTIFICATIONS.include?(event)
 
           post([:publish, @unit, event, options.to_h { |key, value| [key, pack(value)] }])
@@ -91,7 +91,7 @@ module RSpec
 
         # @return the packed value, or `fallback` (by default, the description
         #   of the value) if it cannot be loaded.
-        def self.unpack(packed, fallback=packed[1])
+        def self.unpack(packed, fallback = packed[1])
           data = packed[0]
           data ? Marshal.load(data) : fallback # rubocop:disable Security/MarshalLoad
         rescue Exception # rubocop:disable Lint/RescueException
@@ -106,7 +106,7 @@ module RSpec
           @channel.write(batch)
         end
 
-      private
+        private
 
         def post(message)
           @batch << message
@@ -183,7 +183,7 @@ module RSpec
           return unless event == :example_failed
 
           message = "Failure in an example unknown to the main process: #{example.full_description}\n" +
-                    ExceptionSerializer.safe_message(example.exception || StandardError.new)
+            ExceptionSerializer.safe_message(example.exception || StandardError.new)
           forward_notification(:message, Notifications::MessageNotification.new(message))
         end
 

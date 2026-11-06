@@ -72,7 +72,7 @@ module RSpec
           [@configuration.example_status_persistence_file_path, @configuration.parallel_run_times_file_path].compact.uniq
         end
 
-        DURATION_UNITS = { 'second' => 1, 'minute' => 60 }.freeze
+        DURATION_UNITS = {"second" => 1, "minute" => 60}.freeze
 
         # Parses durations formatted by `Formatters::Helpers.format_duration`.
         def self.parse_duration(text)
@@ -82,7 +82,7 @@ module RSpec
           parts.inject(0.0) { |total, (amount, unit)| total + (amount.to_f * DURATION_UNITS.fetch(unit)) }
         end
 
-      private
+        private
 
         # @return [Array<Unit>] the parts of the unit, in the order in which
         #   they would run sequentially (with the default ordering)
@@ -90,7 +90,7 @@ module RSpec
           return [unit] unless unit.estimate > target && splittable?(unit.group)
 
           units = parts_of(unit, target).flat_map { |part| split(part, target) }
-          units.size > 1 ? units : [unit]
+          (units.size > 1) ? units : [unit]
         end
 
         def splittable?(group)
@@ -125,7 +125,7 @@ module RSpec
             chunks.last.examples << example
             chunks.last.estimate += run_time
           end
-          chunks.size > 1 ? chunks : []
+          (chunks.size > 1) ? chunks : []
         end
 
         # Families of units run longest first: those with the longest unit,

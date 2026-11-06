@@ -1,1 +1,1 @@
-require 'rspec/core/parallel'
+require "rspec/core/parallel"

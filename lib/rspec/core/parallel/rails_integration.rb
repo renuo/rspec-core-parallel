@@ -51,7 +51,7 @@ module RSpec
         # As Rails opens its own log file: in binary mode, so that lines in
         # any encoding can be written, and without buffering.
         def self.open_log_file(path)
-          file = ::File.open(path, 'a')
+          file = ::File.open(path, "a")
           file.binmode
           file.sync = true
           file
@@ -64,12 +64,12 @@ module RSpec
         def self.hooks(type)
           # Loading it registers the hooks creating a database per worker, as
           # `rails/test_help` does.
-          require 'active_record/test_databases' if defined?(::ActiveRecord::TestDatabases)
+          require "active_record/test_databases" if defined?(::ActiveRecord::TestDatabases)
           return [] unless defined?(::ActiveSupport::Testing::Parallelization)
           return [] unless ::ActiveSupport::Testing::Parallelization.respond_to?(type)
           # Rails checks this setting in its hooks only from version 8.1 on.
           return [] if ::ActiveSupport.respond_to?(:parallelize_test_databases) &&
-                       ::ActiveSupport.parallelize_test_databases == false
+            ::ActiveSupport.parallelize_test_databases == false
 
           ::ActiveSupport::Testing::Parallelization.public_send(type)
         rescue LoadError

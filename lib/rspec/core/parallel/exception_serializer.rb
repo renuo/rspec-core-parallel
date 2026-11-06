@@ -27,15 +27,15 @@ module RSpec
           end
         end
 
-        def self.dump(exception, depth=0)
+        def self.dump(exception, depth = 0)
           return nil unless exception
 
           {
-            :marshaled => marshal(exception),
-            :class_name => exception.class.name,
-            :message => safe_message(exception),
-            :backtrace => exception.backtrace,
-            :cause => depth < MAX_CAUSE_DEPTH ? dump(exception.cause, depth + 1) : nil
+            marshaled: marshal(exception),
+            class_name: exception.class.name,
+            message: safe_message(exception),
+            backtrace: exception.backtrace,
+            cause: (depth < MAX_CAUSE_DEPTH) ? dump(exception.cause, depth + 1) : nil
           }
         end
 
@@ -112,7 +112,7 @@ module RSpec
         end
 
         def self.attach_cause(exception, cause)
-          raise exception, :cause => cause
+          raise exception, cause: cause
         rescue Exception => e # rubocop:disable Lint/RescueException
           e
         end

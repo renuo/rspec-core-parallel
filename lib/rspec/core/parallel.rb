@@ -31,8 +31,31 @@ module RSpec
         end
 
         require_components
-        units = Scheduler.new(configuration, world).units(example_groups, configuration.parallel_workers.to_i)
-        units if units.size > 1
+        scheduler = Scheduler.new(configuration, world)
+        units = scheduler.units(example_groups, configuration.parallel_workers.to_i)
+        return nil unless units.size > 1
+
+        configuration.reporter.message(announcement(scheduler, worker_count(configuration, units)))
+        units
+      end
+
+      # Tells whether the run is scheduled with the run times of a previous
+      # run, so that a cold run, e.g. on CI without a cached run times file,
+      # is easy to spot.
+      def self.announcement(scheduler, worker_count)
+        paths = scheduler.run_times_paths.join(', ')
+        run_times = if scheduler.run_times_count > 0
+                      "using the run times of #{scheduler.run_times_count} examples from #{paths}"
+                    elsif paths.empty?
+                      "without run times of a previous run"
+                    else
+                      "without run times of a previous run (none found in #{paths})"
+                    end
+        "Running in #{worker_count} parallel workers, #{run_times}."
+      end
+
+      def self.worker_count(configuration, units)
+        [configuration.parallel_workers.to_i, units.size].min
       end
 
       # Loaded only for parallel runs.
@@ -49,8 +72,7 @@ module RSpec
       #
       # @return [Boolean] whether all examples passed
       def self.run(configuration, world, units, reporter)
-        worker_count = [configuration.parallel_workers.to_i, units.size].min
-        passed = Coordinator.new(configuration, world, worker_count).run(units, reporter)
+        passed = Coordinator.new(configuration, world, worker_count(configuration, units)).run(units, reporter)
         SimpleCovIntegration.after_workers
         persist_run_times(configuration, world)
         passed

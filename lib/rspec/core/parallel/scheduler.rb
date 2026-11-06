@@ -61,6 +61,17 @@ module RSpec
           sort_longest_first(families).flatten
         end
 
+        # @return [Integer] the number of examples with a run time from a
+        #   previous run
+        def run_times_count
+          run_times.size
+        end
+
+        # @return [Array<String>] the files the run times are read from
+        def run_times_paths
+          [@configuration.example_status_persistence_file_path, @configuration.parallel_run_times_file_path].compact.uniq
+        end
+
         DURATION_UNITS = { 'second' => 1, 'minute' => 60 }.freeze
 
         # Parses durations formatted by `Formatters::Helpers.format_duration`.
@@ -146,8 +157,7 @@ module RSpec
         end
 
         def load_run_times
-          paths = [@configuration.example_status_persistence_file_path, @configuration.parallel_run_times_file_path]
-          paths.compact.uniq.each_with_object({}) do |path, times|
+          run_times_paths.each_with_object({}) do |path, times|
             ExampleStatusPersister.load_from(path).each do |example|
               run_time = self.class.parse_duration(example[:run_time])
               times[example[:example_id]] = run_time if run_time

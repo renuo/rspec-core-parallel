@@ -529,6 +529,21 @@ RSpec.describe 'Running specs in parallel worker processes', :unless => RSpec::S
     expect(run_times.map { |example| example[:run_time] }).to all(end_with("seconds"))
   end
 
+  it 'announces the number of workers and whether run times of a previous run are used' do
+    write_groups(2)
+
+    run_command "--parallel 2 spec"
+    expect(last_cmd_stdout).to include(
+      "Running in 2 parallel workers, without run times of a previous run " \
+      "(none found in tmp/rspec_parallel_run_times.txt)."
+    )
+
+    run_command "--parallel 2 spec"
+    expect(last_cmd_stdout).to include(
+      "Running in 2 parallel workers, using the run times of 4 examples from tmp/rspec_parallel_run_times.txt."
+    )
+  end
+
   it 'persists run times in a new `tmp` directory when the project has none' do
     write_groups(2)
 

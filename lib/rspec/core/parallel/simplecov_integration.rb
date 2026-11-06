@@ -43,7 +43,7 @@ module RSpec
           else
             ::SimpleCov.enable_for_subprocesses true
           end
-          require 'simplecov/process'
+          require "simplecov/process"
         end
 
         def self.after_fork(worker_number)

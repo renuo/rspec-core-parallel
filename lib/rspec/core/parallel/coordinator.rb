@@ -51,7 +51,7 @@ module RSpec
           terminate_workers
         end
 
-      private
+        private
 
         # @return [Array<Integer, nil>] for each unit, the unit of the same
         #   top-level group running right before it when running sequentially
@@ -83,11 +83,9 @@ module RSpec
         # every worker when it exits.
         def flush_output_streams
           ObjectSpace.each_object(IO) do |io|
-            begin
-              io.flush unless io.closed?
-            rescue IOError, SystemCallError
-              nil
-            end
+            io.flush unless io.closed?
+          rescue IOError, SystemCallError
+            nil
           end
         end
 
@@ -158,9 +156,9 @@ module RSpec
           return unless unit
 
           if kind == :group
-            event == :example_group_started ? @open_groups_by_unit[unit] << index : @open_groups_by_unit[unit].pop
+            (event == :example_group_started) ? @open_groups_by_unit[unit] << index : @open_groups_by_unit[unit].pop
           elsif kind == :example
-            event == :example_started ? @running_examples[unit] = index : @running_examples.delete(unit)
+            (event == :example_started) ? @running_examples[unit] = index : @running_examples.delete(unit)
           end
         end
 
@@ -213,7 +211,7 @@ module RSpec
           fail_fast = @configuration.fail_fast
           return false unless fail_fast
 
-          @failure_count >= (fail_fast == true ? 1 : fail_fast)
+          @failure_count >= ((fail_fast == true) ? 1 : fail_fast)
         end
 
         def stop_dispatching
@@ -230,10 +228,10 @@ module RSpec
           unit = message[1]
 
           if unit.nil?
-            @live_unit || @open_groups.any? ? @orphan_events << message : apply(message)
+            (@live_unit || @open_groups.any?) ? @orphan_events << message : apply(message)
           else
             make_live(unit) if @live_unit.nil? && replayable_now?(unit)
-            unit == @live_unit ? apply(message) : (@buffers[unit] ||= []) << message
+            (unit == @live_unit) ? apply(message) : (@buffers[unit] ||= []) << message
           end
         end
 

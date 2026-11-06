@@ -21,7 +21,7 @@ module RSpec::Core
 
     describe ".physical_core_count" do
       it "counts the cores whose hardware threads Linux lists as siblings" do
-        siblings = { "cpu0" => "0,2", "cpu1" => "1,3", "cpu2" => "0,2", "cpu3" => "1,3" }
+        siblings = {"cpu0" => "0,2", "cpu1" => "1,3", "cpu2" => "0,2", "cpu3" => "1,3"}
         paths = siblings.keys.map { |cpu| "/sys/devices/system/cpu/#{cpu}/topology/thread_siblings_list" }
         allow(Dir).to receive(:[]).and_call_original
         allow(Dir).to receive(:[]).with("/sys/devices/system/cpu/cpu[0-9]*/topology/thread_siblings_list").and_return(paths)

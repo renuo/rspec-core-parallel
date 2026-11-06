@@ -1,5 +1,5 @@
-require 'rspec/core/bisect/shell_command'
-require 'rspec/core/bisect/fork_runner'
+require "rspec/core/bisect/shell_command"
+require "rspec/core/bisect/fork_runner"
 
 module RSpec
   module Core
@@ -12,7 +12,7 @@ module RSpec
         # @private
         module Configuration
           # @private
-          DEFAULT_PARALLEL_RUN_TIMES_FILE_PATH = 'tmp/rspec_parallel_run_times.txt'
+          DEFAULT_PARALLEL_RUN_TIMES_FILE_PATH = "tmp/rspec_parallel_run_times.txt"
 
           def self.included(configuration)
             # @macro add_setting
@@ -91,7 +91,7 @@ module RSpec
 
           # @private
           def parallel_worker_hooks(type)
-            (@parallel_worker_hooks ||= { :setup => [], :teardown => [] })[type]
+            (@parallel_worker_hooks ||= {setup: [], teardown: []})[type]
           end
         end
 
@@ -112,27 +112,27 @@ module RSpec
           # the workers in parallel runs, where `:suite` hooks run in every
           # worker. Use them for what all the workers share, like starting a
           # service or cleaning it up.
-          def before(scope=nil, *meta, &block)
+          def before(scope = nil, *meta, &block)
             return super unless scope == :run
 
             run_hooks(:before) << Hooks::BeforeHook.new(block, {})
           end
           alias_method :append_before, :before
 
-          def prepend_before(scope=nil, *meta, &block)
+          def prepend_before(scope = nil, *meta, &block)
             return super unless scope == :run
 
             run_hooks(:before).unshift Hooks::BeforeHook.new(block, {})
           end
 
-          def after(scope=nil, *meta, &block)
+          def after(scope = nil, *meta, &block)
             return super unless scope == :run
 
             run_hooks(:after).unshift Hooks::AfterHook.new(block, {})
           end
           alias_method :prepend_after, :after
 
-          def append_after(scope=nil, *meta, &block)
+          def append_after(scope = nil, *meta, &block)
             return super unless scope == :run
 
             run_hooks(:after) << Hooks::AfterHook.new(block, {})
@@ -152,19 +152,19 @@ module RSpec
             return yield if dry_run?
 
             begin
-              run_run_hooks('a `before(:run)` hook', run_hooks(:before), :stop_on_failure) ? yield : false
+              run_run_hooks("a `before(:run)` hook", run_hooks(:before), :stop_on_failure) ? yield : false
             ensure
-              run_run_hooks('an `after(:run)` hook', run_hooks(:after))
+              run_run_hooks("an `after(:run)` hook", run_hooks(:after))
             end
           end
 
-        private
+          private
 
           def run_hooks(position)
-            (@run_hooks ||= { :before => [], :after => [] })[position]
+            (@run_hooks ||= {before: [], after: []})[position]
           end
 
-          def run_run_hooks(description, hooks, stop_on_failure=false)
+          def run_run_hooks(description, hooks, stop_on_failure = false)
             context = SuiteHookContext.new(description, reporter)
             hooks.each do |hook|
               hook.run(context)
@@ -178,28 +178,28 @@ module RSpec
           # rspec-core runs the default path (`spec`) when no files are given
           # only when its command is `rspec`.
           def command
-            super == 'rspec-parallel' ? 'rspec' : super
+            (super == "rspec-parallel") ? "rspec" : super
           end
         end
 
         # @private
         module Parser
-          def parse(source=nil)
+          def parse(source = nil)
             # The long form of an option with an optional argument consumes the
             # next argument even when it is a file path, the short form does not.
-            @original_args = original_args.map { |arg| arg == '--parallel' ? '-j' : arg }
+            @original_args = original_args.map { |arg| (arg == "--parallel") ? "-j" : arg }
             super
           end
 
-        private
+          private
 
           def parser(options)
             super.tap do |parser|
-              parser.separator ''
-              parser.separator '  **** Parallel ****'
-              parser.separator ''
-              parser.on('-j', '--[no-]parallel [COUNT]', Integer,
-                        'Run the suite in COUNT forked worker processes (default: number of physical CPU cores).') do |count|
+              parser.separator ""
+              parser.separator "  **** Parallel ****"
+              parser.separator ""
+              parser.on("-j", "--[no-]parallel [COUNT]", Integer,
+                "Run the suite in COUNT forked worker processes (default: number of physical CPU cores).") do |count|
                 options[:parallel_workers] = count.nil? ? Parallel.default_worker_count : (count || 1)
               end
             end
@@ -255,7 +255,7 @@ module RSpec
           # Overrides the time profiled for a top-level group, for groups run
           # in another process.
           def record_group_run_time(group, run_time)
-            return unless @profiler && @profiler.example_groups.key?(group)
+            return unless @profiler&.example_groups&.key?(group)
 
             @profiler.example_groups[group][:total_time] = run_time
           end
@@ -271,7 +271,7 @@ module RSpec
               begin
                 examples_time = examples.inject(0.0) { |total, example| total + example.execution_result.run_time.to_f }
                 time_taken = slow_duration / [duration, examples_time].max
-                '%.1f' % ((time_taken.nan? ? 0.0 : time_taken) * 100)
+                "%.1f" % ((time_taken.nan? ? 0.0 : time_taken) * 100)
               end
           end
         end
@@ -293,7 +293,7 @@ module RSpec
             "#{super.sub(executable) { "-rrspec/core/parallel #{executable}" }} --no-parallel"
           end
 
-        private
+          private
 
           def without_parallel_options(args)
             kept = []
@@ -302,7 +302,7 @@ module RSpec
               next count_may_follow = false if count_may_follow && arg =~ /\A\d+\z/
 
               count_may_follow = %w[-j --parallel].include?(arg)
-              kept << arg unless arg =~ PARALLEL_OPTION
+              kept << arg unless PARALLEL_OPTION.match?(arg)
             end
             kept
           end
@@ -314,7 +314,7 @@ module RSpec
         module BisectRunDispatcher
           def initialize(runner, channel)
             super
-            runner.configuration.force(:parallel_workers => 1)
+            runner.configuration.force(parallel_workers: 1)
           end
         end
       end

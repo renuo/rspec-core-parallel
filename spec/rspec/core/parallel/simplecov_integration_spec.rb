@@ -1,4 +1,4 @@
-require 'coverage'
+require "coverage"
 
 module RSpec::Core::Parallel
   RSpec.describe SimpleCovIntegration do
@@ -15,7 +15,7 @@ module RSpec::Core::Parallel
             enabled_for_subprocesses
           end
 
-          def command_name(name=nil)
+          def command_name(name = nil)
             @command_name = name if name
             @command_name
           end
@@ -29,22 +29,22 @@ module RSpec::Core::Parallel
 
     before do
       stub_const("SimpleCov", simplecov)
-      simplecov.command_name 'RSpec'
+      simplecov.command_name "RSpec"
       allow(::Coverage).to receive(:running?).and_return(true)
-      allow(SimpleCovIntegration).to receive(:require).with('simplecov/process')
+      allow(SimpleCovIntegration).to receive(:require).with("simplecov/process")
     end
 
-    it 'starts SimpleCov in the workers, named after their number' do
+    it "starts SimpleCov in the workers, named after their number" do
       SimpleCovIntegration.before_fork
-      simplecov.command_name 'RSpec (subprocess: 12345)'
+      simplecov.command_name "RSpec (subprocess: 12345)"
       SimpleCovIntegration.after_fork(2)
 
       expect(simplecov.enabled_for_subprocesses?).to be(true)
-      expect(SimpleCovIntegration).to have_received(:require).with('simplecov/process')
-      expect(simplecov.command_name).to eq 'RSpec (worker 2)'
+      expect(SimpleCovIntegration).to have_received(:require).with("simplecov/process")
+      expect(simplecov.command_name).to eq "RSpec (worker 2)"
     end
 
-    it 'uses the setting of SimpleCov 1.x, which deprecates `enable_for_subprocesses`' do
+    it "uses the setting of SimpleCov 1.x, which deprecates `enable_for_subprocesses`" do
       simplecov.define_singleton_method(:merge_subprocesses) { |value| self.enabled_for_subprocesses = value }
       allow(simplecov).to receive(:enable_for_subprocesses).and_call_original
 
@@ -54,17 +54,17 @@ module RSpec::Core::Parallel
       expect(simplecov).not_to have_received(:enable_for_subprocesses)
     end
 
-    it 'keeps the configuration of suites already measuring the coverage of subprocesses' do
+    it "keeps the configuration of suites already measuring the coverage of subprocesses" do
       simplecov.enable_for_subprocesses true
       SimpleCovIntegration.before_fork
-      simplecov.command_name 'Custom (subprocess: 12345)'
+      simplecov.command_name "Custom (subprocess: 12345)"
       SimpleCovIntegration.after_fork(2)
 
       expect(SimpleCovIntegration).not_to have_received(:require)
-      expect(simplecov.command_name).to eq 'Custom (subprocess: 12345)'
+      expect(simplecov.command_name).to eq "Custom (subprocess: 12345)"
     end
 
-    it 'does not start SimpleCov in the workers when it is not measuring coverage' do
+    it "does not start SimpleCov in the workers when it is not measuring coverage" do
       allow(::Coverage).to receive(:running?).and_return(false)
 
       SimpleCovIntegration.before_fork
@@ -72,8 +72,8 @@ module RSpec::Core::Parallel
       expect(simplecov.enabled_for_subprocesses?).to be_falsey
     end
 
-    it 'merges the results of workers that finished long before the others' do
-      simplecov.define_singleton_method(:merge_timeout) do |seconds=nil|
+    it "merges the results of workers that finished long before the others" do
+      simplecov.define_singleton_method(:merge_timeout) do |seconds = nil|
         @merge_timeout = seconds if seconds
         @merge_timeout || 600
       end
@@ -85,13 +85,13 @@ module RSpec::Core::Parallel
       expect(simplecov.merge_timeout).to eq 1801
     end
 
-    it 'keeps SimpleCov from taking a worker for the process writing the report' do
+    it "keeps SimpleCov from taking a worker for the process writing the report" do
       SimpleCovIntegration.after_fork(1)
 
       expect(simplecov.final_result_process?).to be(false)
     end
 
-    it 'does nothing without SimpleCov' do
+    it "does nothing without SimpleCov" do
       hide_const("SimpleCov")
 
       expect { SimpleCovIntegration.before_fork }.not_to raise_error

@@ -26,7 +26,7 @@ module RSpec
           @example_indices[example]
         end
 
-      private
+        private
 
         def register(group)
           @group_indices[group] = @groups.size

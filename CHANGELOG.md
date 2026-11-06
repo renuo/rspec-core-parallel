@@ -2,45 +2,46 @@
 
 ## Unreleased
 
-* Parallel runs start by printing the number of workers and whether they use
+- Parallel runs start by printing the number of workers and whether they use
   the run times of a previous run, and from which file, so that a run without
   them (e.g. on CI without a cached run times file) is easy to spot.
-* README: which file to cache on CI when `example_status_persistence_file_path`
+- README: which file to cache on CI when `example_status_persistence_file_path`
   is set, cleanup hooks deleting shared directories, and background threads
   like the reporter of Coverband.
+- Release from Semaphore when a version tag is pushed.
 
-## 0.4.0
+## 0.4.0 - 2026-10-20
 
-* In Rails apps every worker writes to its own log file (`log/test-1.log`,
+- In Rails apps every worker writes to its own log file (`log/test-1.log`,
   `log/test-2.log`...) instead of `log/test.log`.
 
-## 0.3.0
+## 0.3.0 - 2026-10-20
 
-* `before(:run)` and `after(:run)` hooks, which run once per run: in the main
+- `before(:run)` and `after(:run)` hooks, which run once per run: in the main
   process around the workers in parallel runs, around the `:suite` hooks in
   sequential runs.
-* SimpleCov merges the coverage of workers that finished more than its
+- SimpleCov merges the coverage of workers that finished more than its
   `merge_timeout` (10 minutes by default) before the slowest one.
 
-## 0.2.1
+## 0.2.1 - 2026-10-20
 
-* No deprecation warning with SimpleCov 1.x, which renamed
+- No deprecation warning with SimpleCov 1.x, which renamed
   `enable_for_subprocesses` to `merge_subprocesses`.
 
-## 0.2.0
+## 0.2.0 - 2026-10-20
 
-* SimpleCov collects the coverage of the workers without any configuration.
-* `--profile` shows the slowest examples as a share of the time taken by all
+- SimpleCov collects the coverage of the workers without any configuration.
+- `--profile` shows the slowest examples as a share of the time taken by all
   the examples, rather than of the run time, which could exceed 100%.
-* README: require the gem in `spec_helper.rb` in Rails apps too, to configure it
+- README: require the gem in `spec_helper.rb` in Rails apps too, to configure it
   there, and create the test database on CI as usual.
 
-## 0.1.0
+## 0.1.0 - 2026-10-20
 
-* Loading the gem makes `rspec` run the suite in forked worker processes, one
+- Loading the gem makes `rspec` run the suite in forked worker processes, one
   per physical CPU core (`config.parallel_workers = 1` runs it sequentially).
-* `rspec-parallel` command, which also takes `--parallel [COUNT]` (`-j`) and
+- `rspec-parallel` command, which also takes `--parallel [COUNT]` (`-j`) and
   `--no-parallel`.
-* Extracted from a backport of `rspec --parallel` to rspec-core 3.13. Unlike
+- Extracted from a backport of `rspec --parallel` to rspec-core 3.13. Unlike
   there, run times are saved in `tmp/rspec_parallel_run_times.txt` even when
   `tmp` does not exist yet.

@@ -1,21 +1,20 @@
-
 module RSpec::Core::Parallel
   RSpec.describe ExceptionSerializer do
     def round_trip(exception)
       ExceptionSerializer.load(Marshal.load(Marshal.dump(ExceptionSerializer.dump(exception))))
     end
 
-    def raised(exception, cause=nil)
-      raise exception, :cause => cause
+    def raised(exception, cause = nil)
+      raise exception, cause: cause
     rescue Exception => e # rubocop:disable Lint/RescueException
       e
     end
 
-    it 'returns nil for nil' do
+    it "returns nil for nil" do
       expect(round_trip(nil)).to be_nil
     end
 
-    it 'preserves the class, message and backtrace of marshalable exceptions' do
+    it "preserves the class, message and backtrace of marshalable exceptions" do
       exception = round_trip(raised(ArgumentError.new("bad")))
 
       expect(exception).to be_an(ArgumentError)
@@ -23,7 +22,7 @@ module RSpec::Core::Parallel
       expect(exception.backtrace.first).to include(__FILE__)
     end
 
-    it 'preserves the state of marshalable exceptions' do
+    it "preserves the state of marshalable exceptions" do
       failure = begin
         aggregate_failures do
           expect(1).to eq(2)
@@ -40,7 +39,7 @@ module RSpec::Core::Parallel
       expect(exception.message).to eq(failure.message)
     end
 
-    it 'rebuilds unmarshalable exceptions from their class, message, backtrace and cause' do
+    it "rebuilds unmarshalable exceptions from their class, message, backtrace and cause" do
       unmarshalable = raised(RuntimeError.new("with a proc"), raised(IOError.new("the cause")))
       unmarshalable.instance_variable_set(:@callback, proc {})
 
@@ -53,7 +52,7 @@ module RSpec::Core::Parallel
       expect(exception.cause.message).to eq("the cause")
     end
 
-    it 'keeps the message of rebuilt exceptions whose class computes it' do
+    it "keeps the message of rebuilt exceptions whose class computes it" do
       error_class = Class.new(StandardError) do
         def initialize(callback)
           @callback = callback
@@ -72,7 +71,7 @@ module RSpec::Core::Parallel
       expect(exception.message).to eq("computed: 42")
     end
 
-    it 'stands in for unmarshalable exceptions whose methods rely on state set by their constructor' do
+    it "stands in for unmarshalable exceptions whose methods rely on state set by their constructor" do
       error_class = Class.new(StandardError) do
         def initialize(wrapped)
           @wrapped = wrapped
@@ -94,7 +93,7 @@ module RSpec::Core::Parallel
       expect(exception.backtrace).to eq(original.backtrace)
     end
 
-    it 'stands in for exceptions whose class is unknown with an exception reporting the original class name' do
+    it "stands in for exceptions whose class is unknown with an exception reporting the original class name" do
       payload = ExceptionSerializer.dump(raised(StandardError.new("oops")))
       payload[:marshaled] = nil
       payload[:class_name] = "Missing::ErrorClass"

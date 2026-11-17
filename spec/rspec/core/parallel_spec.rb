@@ -1,21 +1,29 @@
 module RSpec::Core
   RSpec.describe Parallel do
     describe ".default_worker_count" do
-      before { allow(Etc).to receive(:nprocessors).and_return(8) }
-
-      it "is the number of physical cores" do
-        allow(Parallel).to receive(:physical_core_count).and_return(4)
+      it "is the number of logical CPUs on a machine with up to 8 of them" do
+        allow(Etc).to receive(:nprocessors).and_return(4)
+        allow(Parallel).to receive(:physical_core_count).and_return(2)
         expect(Parallel.default_worker_count).to eq 4
       end
 
-      it "is limited by the processors the process may use" do
-        allow(Parallel).to receive(:physical_core_count).and_return(16)
-        expect(Parallel.default_worker_count).to eq 8
-      end
+      context "on a bigger machine" do
+        before { allow(Etc).to receive(:nprocessors).and_return(16) }
 
-      it "is the number of processors when the number of cores is unknown" do
-        allow(Parallel).to receive(:physical_core_count).and_return(nil)
-        expect(Parallel.default_worker_count).to eq 8
+        it "is the number of physical cores" do
+          allow(Parallel).to receive(:physical_core_count).and_return(8)
+          expect(Parallel.default_worker_count).to eq 8
+        end
+
+        it "is limited by the processors the process may use" do
+          allow(Parallel).to receive(:physical_core_count).and_return(32)
+          expect(Parallel.default_worker_count).to eq 16
+        end
+
+        it "is the number of processors when the number of cores is unknown" do
+          allow(Parallel).to receive(:physical_core_count).and_return(nil)
+          expect(Parallel.default_worker_count).to eq 16
+        end
       end
     end
 

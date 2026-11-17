@@ -1,7 +1,7 @@
 # rspec-core-parallel
 
 Run your RSpec suite on all the cores of your machine. Add the gem and `rspec` runs in parallel, with one worker per
-physical CPU core.
+CPU.
 
 The suite is loaded once, then forked into worker processes. Workers pick up the longest groups first and send their
 results back to the main process, which prints a single report. Formatters, `--only-failures`, `--profile`,
@@ -27,7 +27,10 @@ Then run `bundle exec rspec` as usual.
 
 ## Number of workers
 
-By default you get one worker per physical CPU core. To change it, set `parallel_workers` in `spec_helper.rb`.
+By default you get one worker per CPU: per logical CPU (hyper-threads included) on machines with up to 8 of them,
+such as CI runners, where the workers spend much of their time waiting on the database and the browser, and per
+physical core on bigger machines, where hyper-threads sharing a core slow each other down. To change it, set
+`parallel_workers` in `spec_helper.rb`.
 `1` turns parallel runs off.
 
 ```ruby

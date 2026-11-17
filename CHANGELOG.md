@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- On machines with up to 8 logical CPUs (CI runners, laptops) the default
+  number of workers is the number of logical CPUs, hyper-threads included,
+  rather than of physical cores: the workers wait on the database and the
+  browser, and the suite runs 15-35% faster. A 2-vCPU runner now gets 2
+  workers instead of running sequentially. Bigger machines keep one worker
+  per physical core.
+- When the last worker finishes well after the others, the run reports the
+  longest unit, which can't be split further: an example or a group with
+  context hooks.
 - Parallel runs start by printing the number of workers and whether they use
   the run times of a previous run, and from which file, so that a run without
   them (e.g. on CI without a cached run times file) is easy to spot.

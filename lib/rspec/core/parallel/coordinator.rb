@@ -40,6 +40,8 @@ module RSpec
           @exit_status = nil
           @open_groups_by_unit = Hash.new { |hash, unit| hash[unit] = [] }
           @running_examples = {}
+          @unit_run_times = {}
+          @last_unit_finished_at = {}
 
           start_workers
           process_events while @workers.any?(&:alive?)
@@ -71,6 +73,7 @@ module RSpec
           SimpleCovIntegration.before_fork
           Process.warmup if Process.respond_to?(:warmup)
 
+          @started_at = monotonic_now
           @workers = []
           1.upto(@worker_count) do |number|
             worker = Worker.new(number).start(@configuration, @registry, @workers)
@@ -133,6 +136,8 @@ module RSpec
           case message.first
           when :unit_done
             _, unit, succeeded, run_time = message
+            @unit_run_times[unit] = run_time
+            @last_unit_finished_at[worker.number] = monotonic_now
             worker.current_unit = nil
             @results << succeeded
             @run_times[@units[unit].split_ancestors.first || @units[unit].group] += run_time
@@ -335,7 +340,43 @@ module RSpec
           replay_orphan_events
 
           @run_times.each { |group, run_time| @reporter.record_group_run_time(group, run_time) }
+          report_tail
           @workers.each(&:wait)
+        end
+
+        # Workers finishing long after the first one spent that time waiting
+        # for one unit that could not be split further: an example, or a group
+        # with `before(:context)` hooks. Shows what to shorten or split.
+        TAIL_SHARE_WORTH_REPORTING = 0.1
+        TAIL_SECONDS_WORTH_REPORTING = 2.0
+
+        def report_tail
+          finished_at = @last_unit_finished_at.values
+          return if finished_at.size < 2 || @quitting
+
+          tail = finished_at.max - finished_at.min
+          elapsed = finished_at.max - @started_at
+          return if tail < TAIL_SECONDS_WORTH_REPORTING || tail < elapsed * TAIL_SHARE_WORTH_REPORTING
+
+          longest = @unit_run_times.max_by { |_unit, run_time| run_time }
+          unit, run_time = longest
+          examples = Formatters::Helpers.pluralize(examples_in(@units[unit]).size, "example")
+          @reporter.message(
+            format("\nThe last worker finished %.1fs after the first one (%.0f%% of the run). Longest unit: %s " \
+                   "(%.1fs, %s). Examples and groups with context hooks can't be split across workers.",
+              tail, tail / elapsed * 100, @units[unit].group.location, run_time, examples)
+          )
+        end
+
+        def examples_in(unit)
+          return unit.examples if unit.examples
+          return @world.filtered_examples[unit.group] if unit.examples_only
+
+          unit.group.descendants.flat_map { |group| @world.filtered_examples[group] }
+        end
+
+        def monotonic_now
+          Process.clock_gettime(Process::CLOCK_MONOTONIC)
         end
 
         def terminate_workers

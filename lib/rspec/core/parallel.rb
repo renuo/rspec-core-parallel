@@ -92,12 +92,21 @@ module RSpec
         Process.respond_to?(:fork) && RUBY_ENGINE == "ruby" && !RSpec::Support::OS.windows?
       end
 
-      # One worker per physical core: workers sharing a core through
-      # simultaneous multithreading (hyper-threading) mostly slow each other
-      # down, using more CPU time and memory for the same wall time.
+      # On small machines (CI runners, laptops) the database and the browsers
+      # share the few cores with the workers, which wait on them: one worker
+      # per logical CPU, hyper-threads included, runs the suite 15-35%
+      # faster than one per physical core (measured on 2 cores/4 threads).
+      # On bigger machines the cores are saturated and workers sharing a core
+      # slow each other down, using more CPU time and memory for the same
+      # wall time: one worker per physical core.
+      LOGICAL_CPUS_FOR_SMALL_MACHINE = 8
+
       def self.default_worker_count
         require "etc"
-        [Etc.nprocessors, physical_core_count].compact.min
+        logical = Etc.nprocessors
+        return logical if logical <= LOGICAL_CPUS_FOR_SMALL_MACHINE
+
+        [logical, physical_core_count].compact.min
       end
 
       def self.physical_core_count

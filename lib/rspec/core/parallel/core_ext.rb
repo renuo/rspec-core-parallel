@@ -199,7 +199,7 @@ module RSpec
               parser.separator "  **** Parallel ****"
               parser.separator ""
               parser.on("-j", "--[no-]parallel [COUNT]", Integer,
-                "Run the suite in COUNT forked worker processes (default: number of physical CPU cores).") do |count|
+                "Run the suite in COUNT forked worker processes (default: number of CPUs).") do |count|
                 options[:parallel_workers] = count.nil? ? Parallel.default_worker_count : (count || 1)
               end
             end

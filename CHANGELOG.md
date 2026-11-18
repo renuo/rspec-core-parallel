@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 - 2026-11-18
 
 - On machines with up to 8 logical CPUs (CI runners, laptops) the default
   number of workers is the number of logical CPUs, hyper-threads included,
